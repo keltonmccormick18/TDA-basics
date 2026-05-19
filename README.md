@@ -1,55 +1,78 @@
-# TDA-basics
+# TDA Systemic Risk Early Warning System
 
-Topology, and in particular Homology, is loosely the study of shapes of spaces -- how many holes are in the space, and their dimensionalities.
+Applied Topological Data Analysis to 30 years of multi-index equity data (S&P 500, NASDAQ, Dow Jones, Jan 1995 – Feb 2026). Persistence landscape features show clear leading signals approximately 100 days prior to the Dotcom Bubble, 2008 Financial Crisis, and COVID-19 crash.
 
-We face three main problems in implementing this to observe the shape of a data set -- topology usually deals with a continuous surface, instead of a point cloud, noise can easily interrupt any true underlying structure, and the shape of a data set can be difficult to properly interpret.
+---
 
-First, we need to take our data set (point cloud) and turn it into a topological space. We do this by constructing shapes -- known as simplices -- between points that are "close enough" to each other. This presents us with a choice of distance metric which we can define.
-Second, we can compute the homology of that set of simplices, but this is very sensitive to noise.
+## Results
 
-So, to combat this problem, we would like to refine our approach in order to deal with these noisy points appropriately. A filtration on our point cloud is a sequence of nested simplicial complexes, often obtained by increasing the maximum required distance between points. A filtration lets us observe what happens to the shape of the data at different levels of sensitivity, which avoids both the issues of overfitting and being sensitive to noise. We can encode this information by using Betti numbers, which roughly correspond to the number of holes in the data -- concretely, the kth Betti number is the dimension of the kth homology group on our space X. We can plot those Betti numbers and record when they are "born" and "die". This is called a persistence diagram.
+**Full 30-year L1 and L2 norm time series:**
 
-#Our project
+![L1, L2 norms over 30 years, 50 day window](https://github.com/keltonmccormick18/TDA-basics/raw/main/50window.png)
 
-In our case, we then converted the persistence diagrams into persistence landscapes -- for each birth-death pair, we create a tent of the appropriate length on our persistence landscape. We can then take the L1 and L2 norms of the persistence landscapes, which roughly tell us how long (with different weightings) the total lifetime of each topological feature lasted. This makes sense to do, as it again eliminates our noisy points -- those lie close to the diagonal on the persistence diagram and hence have a very small L1 and especially L2 norm.
+![L1, L2 norms over 30 years, 100 day window](https://github.com/keltonmccormick18/TDA-basics/raw/main/100window.png)
 
-In this example, we take data from Yahoo Finance -- 3 indices, Jan 1st, 1995 to Feb 23, 2026. We then created point clouds for each window by plotting the daily log-returns for each index on each axis, with different points corresponding to different days. In this way, the Euclidean distance between each point directly represents the volatility -- lower average distance corresponds to a more stable market over the window.
+Volatility spikes align clearly with all three major crashes. The more useful observation is what happens in the 500 days *before* each crash:
 
-We then create a distance matrix for each point cloud, compute the Vietoris-Rips complexes, and convert that into a persistence diagram and then finally landscape. We then calculate the L1 and L2 norm of each landscape, and plot them against time.
+**Dotcom Bubble (2000):** Norm stability for the first ~400 days, then a clear upturn beginning ~100 days before the crash.
 
-#Results
+![L1, L2 norms for Dotcom Bubble, 100 day window](https://github.com/keltonmccormick18/TDA-basics/raw/main/100dotcom.png)
 
-<img width="1598" height="994" alt="Screenshot 2026-02-27 at 7 57 01 AM" src="https://github.com/user-attachments/assets/77f91de3-a40b-43fa-815a-4040ce567f6c" />
+**2008 Financial Crisis:** Same pattern — extended stability followed by a sharp norm increase well before the market peak.
 
-<img width="1592" height="994" alt="Screenshot 2026-02-27 at 8 01 30 AM" src="https://github.com/user-attachments/assets/56ad6df4-d3ee-4be0-b28f-cce7bbbf5862" />
+![L1, L2 norms for 2008, 100 day window](https://github.com/keltonmccormick18/TDA-basics/raw/main/1002008.png)
 
+**COVID-19 (2020):** Compressed timescale but the leading upturn is still visible.
 
-We can very clearly see a correlation between market volatility and each of the three biggest crashes in the past 30 years, in both the L1 and L2 norms. However, the more interesting part is found by observing the shape of the graph leading up to those crashes. 
+![L1, L2 norms for Covid-19 (2020), 100 day window](https://github.com/keltonmccormick18/TDA-basics/raw/main/100covid.png)
 
-<img width="1586" height="988" alt="Screenshot 2026-02-27 at 8 12 49 AM" src="https://github.com/user-attachments/assets/6c1741cf-5c8b-48cd-804f-27e4c212e92a" />
+**Present day (2026, normal conditions):** Norms remain flat, consistent with no structural instability in the current market.
 
-<img width="1596" height="996" alt="Screenshot 2026-02-27 at 8 23 01 AM" src="https://github.com/user-attachments/assets/4a29645c-1740-42cd-8eb2-4337f6b42ba6" />
+![L1, L2 norms for present day, 100 day window](https://github.com/keltonmccormick18/TDA-basics/raw/main/100normal.png)
 
-Dotcom Bubble
+Using a window size of 100 makes this leading signal especially clear, as it smooths out noise while preserving the structural upturn.
 
-<img width="1590" height="992" alt="Screenshot 2026-02-27 at 8 14 32 AM" src="https://github.com/user-attachments/assets/bf75d4c4-13d2-4887-a416-5013375a6aeb" />
+---
 
-<img width="1578" height="978" alt="Screenshot 2026-02-27 at 8 18 37 AM" src="https://github.com/user-attachments/assets/0f882dc0-6c3f-4e5e-80b3-acda6f6c1f99" />
+## How It Works
 
-2008 Housing Crisis
+1. **Point cloud construction.** For each sliding window of trading days, plot the daily log-returns of the three indices as a point in R³. Each point represents one day; the Euclidean distance between points directly represents cross-index volatility dispersion.
 
-<img width="1588" height="992" alt="Screenshot 2026-02-27 at 8 32 01 AM" src="https://github.com/user-attachments/assets/3b5b9d00-9ba7-41a1-a5ab-239324c2bd51" />
+2. **Vietoris-Rips complex.** Construct a simplicial complex from the point cloud by connecting points within a growing distance threshold. This produces a nested sequence of topological spaces (a filtration).
 
-<img width="1590" height="992" alt="Screenshot 2026-02-27 at 8 31 12 AM" src="https://github.com/user-attachments/assets/a40e1d25-3047-470f-b5a4-6a10ca19402c" />
+3. **Persistent homology.** Track when topological features (connected components, loops) appear ("birth") and disappear ("death") across the filtration. This is recorded in a persistence diagram.
 
-Covid 2020
+4. **Persistence landscapes.** Convert each birth-death pair into a tent function. Take L1 and L2 norms of the resulting landscape — these summarize the total lifetime of topological features. Short-lived features (noise) contribute little; long-lived features (structural market geometry) dominate.
 
-<img width="1592" height="994" alt="Screenshot 2026-02-27 at 8 34 31 AM" src="https://github.com/user-attachments/assets/cb25757f-d026-481c-87ef-db0ec4b68226" />
+5. **Time series.** Slide the window across 30 years and plot the landscape norms over time.
 
-<img width="1590" height="992" alt="Screenshot 2026-02-27 at 8 38 40 AM" src="https://github.com/user-attachments/assets/5b9cf159-d6a0-4d60-800a-8b36c884c64b" />
+The key insight: as market volatility builds before a crash, the point cloud geometry changes — return distributions spread out and develop higher-dimensional structure (loops) that persist longer in the filtration. The L1/L2 norms detect this structural change before it manifests as a drawdown in price.
 
-Present Day (Normal Market Conditions)
+---
 
-In each of the periods (500 days) prior to each crash, we can clearly see market normality leading up to the first 100 days prior, and then a clear upturn in volatility. We can see this especially well using a higher window value of 100, which makes this style of analysis an effective option to detect leading signals of systematic market crashes.
+## Run Locally
 
-Attached are the files used to obtain these graphs and calculations.
+```bash
+git clone https://github.com/keltonmccormick18/TDA-basics.git
+cd TDA-basics
+pip install numpy pandas yfinance gudhi matplotlib seaborn
+python downloadmarketdata.py    # fetches S&P, NASDAQ, Dow from Yahoo Finance
+python tdamarketvol.py          # runs TDA pipeline and generates plots
+```
+
+---
+
+## Repository Structure
+
+```
+├── downloadmarketdata.py    # Yahoo Finance data ingestion (3 indices, 1995–present)
+├── tdamarketvol.py          # Full pipeline: point clouds → distance matrices → Rips complexes
+│                            #   → persistence diagrams → landscapes → L1/L2 norms → plots
+└── README.md
+```
+
+---
+
+## Dependencies
+
+Python 3.8+, `gudhi`, `pandas`, `numpy`, `seaborn`, `matplotlib`, `yfinance`
